@@ -99,7 +99,7 @@ export const useEnrollmentStore = create<EnrollmentStore>()((set) => ({
     }),
 
   addStudent: async (student) => {
-    const apiStudent = { ...student, emails: student.emails.map((e) => e.address) };
+    const apiStudent = { ...student, emails: (student.emails ?? []).map((e) => e.address) };
     const created = await api<ApiStudent>("/students", {
       method: "POST",
       body: apiStudent,
@@ -108,7 +108,7 @@ export const useEnrollmentStore = create<EnrollmentStore>()((set) => ({
   },
 
   updateStudent: async (student) => {
-    const apiStudent = { ...student, emails: student.emails.map((e) => e.address) };
+    const apiStudent = { ...student, emails: (student.emails ?? []).map((e) => e.address) };
     const updated = await api<ApiStudent>("/students", {
       method: "PUT",
       body: apiStudent,
