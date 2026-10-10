@@ -279,4 +279,29 @@ router.delete(
         });
       }
 
-      // ต้องลบ Enrollment ที่อ้างอิง studentId ก่อน แล้วค่อยลบนัก
+      // ต้องลบ Enrollment ที่อ้างอิง studentId ก่อน แล้วค่อยลบนักศึกษา (ทำเป็น Transaction)
+      await prisma.$transaction([
+        prisma.enrollment.deleteMany({
+          where: { studentId },
+        }),
+        prisma.student.delete({
+          where: { studentId },
+        }),
+      ]);
+
+      return res.status(200).json({
+        success: true,
+        message: "Deleted successfully",
+        data: student,
+      });
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        message: "Server Error",
+        error: err,
+      });
+    }
+  }
+);
+
+export default router;
