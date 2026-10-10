@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from "express";
-import { zStudentPostBody, zStudentId } from "../libs/zodValidators.js";
+// นำเข้า zStudentPutBody เพิ่มเติมสำหรับตรวจ Validation ของ PUT
+import { zStudentPostBody, zStudentId, zStudentPutBody } from "../libs/zodValidators.js";
 
 import type { Student, CustomRequest } from "../libs/types.js";
 
@@ -16,7 +17,6 @@ const router = Router();
 
 // GET /api/v3/students
 // get students (by program) with files
-
 router.get(
   "/",
   authenticateToken,
@@ -24,7 +24,6 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       // get students from DB (with their files records)
-      // const students = await prisma.student.findMany();
       const students = await prisma.student.findMany({
         include: { files: true },
       });
@@ -181,6 +180,120 @@ router.post(
       });
     }
   },
+);
+
+// PUT /api/v3/students (1.1 แก้ไขข้อมูลนักศึกษา)
+router.put(
+  "/",
+  authenticateToken,
+  checkRoles, // ใช้ checkRoles เพื่อให้ทั้ง ADMIN และ STUDENT เข้าถึงได้ (แต่จะไปเช็คสิทธิ์ด้านในอีกที)
+  async (req: CustomRequest, res: Response) => {
+    try {
+      // ตรวจสอบข้อมูลด้วย Zod
+      const result = zStudentPutBody.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({
+          success: false,
+          message: "Bad Request",
+          errors: result.error.issues,
+        });
+      }
+
+      const { studentId, firstName, lastName, program, interests, emails } = result.data;
+      const user = req.user;
+
+      // Role STUDENT แก้ไขได้แค่ข้อมูลของตัวเองเท่านั้น
+      if (user?.role === "STUDENT" && user.studentId !== studentId) {
+        return res.status(403).json({
+          success: false,
+          message: "Forbidden",
+        });
+      }
+
+      // ค้นหานักศึกษาในฐานข้อมูล
+      const student = await prisma.student.findUnique({
+        where: { studentId },
+      });
+
+      if (!student) {
+        return res.status(404).json({
+          success: false,
+          message: "Not Found",
+        });
+      }
+
+      // อัปเดตข้อมูล
+      const updated = await prisma.student.update({
+        where: { studentId },
+        data: { firstName, lastName, program, interests, emails },
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Updated successfully",
+        data: updated,
+      });
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        message: "Server Error",
+        error: err,
+      });
+    }
+  }
+);
+
+// DELETE /api/v3/students (1.2 ลบนักศึกษา)
+router.delete(
+  "/",
+  authenticateToken,
+  checkRoleAdmin, // ใช้ได้เฉพาะ ADMIN
+  async (req: Request, res: Response) => {
+    try {
+      const { studentId } = req.body;
+
+      if (!studentId) {
+        return res.status(400).json({
+          success: false,
+          message: "Bad Request",
+        });
+      }
+
+      // ตรวจสอบว่ามีนักศึกษาอยู่หรือไม่
+      const student = await prisma.student.findUnique({
+        where: { studentId },
+      });
+
+      if (!student) {
+        return res.status(404).json({
+          success: false,
+          message: "Not Found",
+        });
+      }
+
+      // ต้องลบ Enrollment ที่อ้างอิง studentId ก่อน แล้วค่อยลบนักศึกษา (ทำเป็น Transaction)
+      await prisma.$transaction([
+        prisma.enrollment.deleteMany({
+          where: { studentId },
+        }),
+        prisma.student.delete({
+          where: { studentId },
+        }),
+      ]);
+
+      return res.status(200).json({
+        success: true,
+        message: "Deleted successfully",
+        data: student,
+      });
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        message: "Server Error",
+        error: err,
+      });
+    }
+  }
 );
 
 export default router;
