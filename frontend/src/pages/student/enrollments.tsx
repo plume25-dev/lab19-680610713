@@ -125,7 +125,7 @@ export default function StudentEnrollmentsPage() {
         </div>
 
         <Dialog open={open} onOpenChange={handleOpenChange}>
-          <DialogTrigger asChild={false}>
+          <DialogTrigger>
             <Button disabled={!studentId}>
               <PlusCircle className="h-4 w-4 mr-2" />
               ลงทะเบียนเรียน
@@ -224,7 +224,7 @@ export default function StudentEnrollmentsPage() {
                         open={changingCourseId === e.courseId}
                         onOpenChange={(isOpen) => handleChangeOpen(isOpen ? e.courseId : null)}
                       >
-                        <DialogTrigger asChild={false}>
+                        <DialogTrigger>
                           <Button variant="ghost" size="icon" title="เปลี่ยนวิชา">
                             <ArrowRightLeft className="h-4 w-4" />
                           </Button>
