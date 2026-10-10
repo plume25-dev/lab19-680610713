@@ -27,8 +27,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import * as ConfirmButtonModule from "@/components/confirm-button";
-const ConfirmButton = ConfirmButtonModule.ConfirmButton || ConfirmButtonModule.default;
 import { useAuthStore } from "@/lib/auth-store";
 import { useEnrollmentStore } from "@/lib/enrollment-store";
 
@@ -127,7 +125,7 @@ export default function StudentEnrollmentsPage() {
         </div>
 
         <Dialog open={open} onOpenChange={handleOpenChange}>
-          <DialogTrigger asChild>
+          <DialogTrigger asChild={false}>
             <Button disabled={!studentId}>
               <PlusCircle className="h-4 w-4 mr-2" />
               ลงทะเบียนเรียน
@@ -226,7 +224,7 @@ export default function StudentEnrollmentsPage() {
                         open={changingCourseId === e.courseId}
                         onOpenChange={(isOpen) => handleChangeOpen(isOpen ? e.courseId : null)}
                       >
-                        <DialogTrigger asChild>
+                        <DialogTrigger asChild={false}>
                           <Button variant="ghost" size="icon" title="เปลี่ยนวิชา">
                             <ArrowRightLeft className="h-4 w-4" />
                           </Button>
@@ -274,16 +272,15 @@ export default function StudentEnrollmentsPage() {
                         </DialogContent>
                       </Dialog>
 
-                      <ConfirmButton
+                      <Button
                         variant="ghost"
                         size="icon"
-                        title={`ยกเลิกการลงทะเบียน ${e.courseId}?`}
-                        description={`การลงทะเบียนวิชา ${course?.courseTitle ?? e.courseId} จะถูกลบออก`}
-                        onConfirm={() => handleDrop(e.courseId)}
+                        title="ยกเลิกการลงทะเบียน"
+                        onClick={() => handleDrop(e.courseId)}
                         className="text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="h-4 w-4" />
-                      </ConfirmButton>
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
