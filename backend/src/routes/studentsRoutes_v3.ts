@@ -222,10 +222,18 @@ router.put(
         });
       }
 
+      // สร้างอับเดต Object โดยกรองฟิลด์ที่ไม่เป็น undefined เพื่อแก้ปัญหา Type Error ของ Prisma
+      const updateData: any = {};
+      if (firstName !== undefined && firstName !== null) updateData.firstName = firstName;
+      if (lastName !== undefined && lastName !== null) updateData.lastName = lastName;
+      if (program !== undefined && program !== null) updateData.program = program;
+      if (interests !== undefined && interests !== null) updateData.interests = interests;
+      if (emails !== undefined && emails !== null) updateData.emails = emails;
+
       // อัปเดตข้อมูล
       const updated = await prisma.student.update({
         where: { studentId },
-        data: { firstName, lastName, program, interests, emails },
+        data: updateData,
       });
 
       return res.status(200).json({
@@ -271,29 +279,4 @@ router.delete(
         });
       }
 
-      // ต้องลบ Enrollment ที่อ้างอิง studentId ก่อน แล้วค่อยลบนักศึกษา (ทำเป็น Transaction)
-      await prisma.$transaction([
-        prisma.enrollment.deleteMany({
-          where: { studentId },
-        }),
-        prisma.student.delete({
-          where: { studentId },
-        }),
-      ]);
-
-      return res.status(200).json({
-        success: true,
-        message: "Deleted successfully",
-        data: student,
-      });
-    } catch (err) {
-      return res.status(500).json({
-        success: false,
-        message: "Server Error",
-        error: err,
-      });
-    }
-  }
-);
-
-export default router;
+      // ต้องลบ Enrollment ที่อ้างอิง studentId ก่อน แล้วค่อยลบนัก
